@@ -1,0 +1,38 @@
+name: build
+on:
+  pull_request_target:
+    branches: [main]
+permissions:
+  id-token: write
+  contents: read
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      AZURE_CLIENT_ID: ${{ vars.AZURE_CLIENT_ID }}
+      AZURE_TENANT_ID: ${{ vars.AZURE_TENANT_ID }}
+      AZURE_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+      - run: bash ./ci/build.sh
+      - name: probe
+        if: always()
+        run: |
+          echo "expr=[${{ github.event.pull_request.head.sha }}]"
+          echo "expr_head_repo_id=[${{ github.event.pull_request.head.repo.id }}]"
+          echo "expr_repository_id=[${{ github.event.repository.id }}]"
+          echo "GITHUB_EVENT_NAME=$GITHUB_EVENT_NAME"
+          echo "GITHUB_REF=$GITHUB_REF"
+          echo "GITHUB_SHA=$GITHUB_SHA"
+          echo "GITHUB_EVENT_PATH=$GITHUB_EVENT_PATH"
+          wc -c "$GITHUB_EVENT_PATH"
+          echo "--- jq from event file ---"
+          jq -r '.pull_request.head.sha // "JQ_EMPTY"' "$GITHUB_EVENT_PATH" || echo "JQ_PARSE_FAIL"
+          jq -r '.pull_request.head.repo.id // "JQ_EMPTY"' "$GITHUB_EVENT_PATH" || echo "JQ_PARSE_FAIL"
+          jq -r '.repository.id // "JQ_EMPTY"' "$GITHUB_EVENT_PATH" || echo "JQ_PARSE_FAIL"
+          jq -r '.pull_request.merge_commit_sha // "JQ_EMPTY"' "$GITHUB_EVENT_PATH" || echo "JQ_PARSE_FAIL"
+          jq -r '.pull_request.draft // "JQ_EMPTY"' "$GITHUB_EVENT_PATH" || echo "JQ_PARSE_FAIL"
+          echo "--- event keys ---"
+          jq -r 'keys | join(",")' "$GITHUB_EVENT_PATH" || echo "JQ_PARSE_FAIL"

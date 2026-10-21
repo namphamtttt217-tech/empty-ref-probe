@@ -1,3 +1,3 @@
 #!/usr/bin/env bash
-echo "BASE-BUILD-SH-RAN (base repo version)"
-id
+echo "A2FAIL-BUILD-SH (intentional exit 1)"
+exit 1

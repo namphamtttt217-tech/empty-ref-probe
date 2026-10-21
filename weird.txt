@@ -1,0 +1,2 @@
+weird {"json": true}
+unicode: é✓🚀 zero-width:﻿​

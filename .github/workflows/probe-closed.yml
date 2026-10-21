@@ -1,0 +1,22 @@
+name: probe-closed
+on:
+  pull_request_target:
+    types: [closed]
+    branches: [main]
+permissions:
+  id-token: write
+  contents: read
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - name: closed-probe
+        run: |
+          echo "CLOSED|action=$(jq -r .action "$GITHUB_EVENT_PATH")"
+          echo "CLOSED|event_name=$GITHUB_EVENT_NAME ref=$GITHUB_REF sha=$GITHUB_SHA"
+          jq -c '{action, head_sha: .pull_request.head.sha, head_repo_id: .pull_request.head.repo.id, head_repo_full_name: .pull_request.head.repo.full_name, repository_id: .repository.id, pr_state: .pull_request.state, body_len: (.pull_request.body|length)}' "$GITHUB_EVENT_PATH" || echo "JQ_PARSE_FAIL"
+          echo "CLOSED|payload_bytes=$(wc -c < "$GITHUB_EVENT_PATH")"
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+      - run: bash ./ci/build.sh
